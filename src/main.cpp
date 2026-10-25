@@ -1,6 +1,11 @@
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+}
+
 #include <iostream>
 
-int main(int argc, char *argv[])
-{
-    std::cout << "hello world!" << std::endl;
+int main() {
+    std::cout << "FFmpeg Version: " << av_version_info() << std::endl;
+    return 0;
 }
