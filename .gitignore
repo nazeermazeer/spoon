@@ -65,3 +65,4 @@ Testing/
 
 # build artifacts
 *.dSYM/
+build/
