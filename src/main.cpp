@@ -36,6 +36,10 @@ int main() {
         av_packet_unref(packet);
     }
 
+    char error_buf[AV_ERROR_MAX_STRING_SIZE];
+    av_make_error_string(error_buf, AV_ERROR_MAX_STRING_SIZE, av_read_frame(context, packet));
+    std::cout << "error: " << error_buf << "\n";
+
     avformat_close_input(&context);
     avformat_free_context(context);
     av_packet_free(&packet);
