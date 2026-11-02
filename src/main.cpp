@@ -24,6 +24,9 @@ int main() {
     avformat_find_stream_info(context, &options);
     av_dump_format(context, 0, "4", 0);
 
+    avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
+    AVStream *stream = avformat_new_stream(context, NULL);
+
     while (true) {
         // macOS Virtual Key Code 12 = Q
         if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
@@ -39,5 +42,6 @@ int main() {
         usleep(10000);
     }
     avformat_close_input(&context);
+    avformat_free_context(context);
     return 0;
 }
