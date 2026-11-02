@@ -5,6 +5,7 @@
 extern "C" {
 #include <libavdevice/avdevice.h>
 #include <libavcodec/avcodec.h>
+#include <libavutil/rational.h>
 }
 
 int main() {
@@ -32,6 +33,14 @@ int main() {
     const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
     AVCodecContext* codec_context = avcodec_alloc_context3(codec);
 
+    codec_context->width = 1920;
+    codec_context->height = 1080;
+    codec_context->bit_rate = 4000000;
+    codec_context->time_base = AVRational{1, 30};
+    codec_context->framerate = AVRational{30, 1};
+    codec_context->pix_fmt = AV_PIX_FMT_YUV420P;  
+    codec_context->gop_size = 12;
+    codec_context->max_b_frames = 2; 
 
     while (av_read_frame(format_context, packet) >= 0) {
         if (packet->stream_index == stream_idx) {
