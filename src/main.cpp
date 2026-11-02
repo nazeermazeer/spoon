@@ -20,11 +20,12 @@ int main() {
 
     AVFormatContext* context = avformat_alloc_context();
     avformat_open_input(&context, "4", input_format, &options);
+    av_dict_free(&options);
 
     avformat_find_stream_info(context, &options);
     av_dump_format(context, 0, "4", 0);
 
-    avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
+    // avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
     AVStream *stream = avformat_new_stream(context, NULL);
 
     while (true) {
