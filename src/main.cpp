@@ -19,7 +19,7 @@ int main() {
     av_dict_set(&options, "capture_cursor", "1", 0); 
 
     AVFormatContext* context = avformat_alloc_context();
-    avformat_open_input(&context, "screen0:0", input_format, &options);
+    avformat_open_input(&context, "1", input_format, &options);
 
     while (true) {
         // macOS Virtual Key Code 12 = Q
