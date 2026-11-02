@@ -23,3 +23,16 @@ target_link_directories(main PRIVATE ${FFMPEG_LIBRARY_DIRS})
 
 # 4. Link the necessary FFmpeg libraries to your executable
 target_link_libraries(main PRIVATE ${FFMPEG_LIBRARIES})
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(main PRIVATE 
+        -fsanitize=address 
+        -fsanitize=undefined 
+        -fno-omit-frame-pointer 
+        -g
+    )
+    target_link_options(main PRIVATE 
+        -fsanitize=address 
+        -fsanitize=undefined
+    )
+endif()
