@@ -36,7 +36,25 @@ int main() {
     while (av_read_frame(format_context, packet) >= 0) {
         if (packet->stream_index == stream_idx) {
             std::cout << "Read packet with size: " << packet->size << "\n";
+
+            AVFrame* frame = av_frame_alloc();
+            
             int response = avcodec_send_packet(codec_context, packet);
+            while (response >= 0) {
+                response = avcodec_receive_frame(codec_context, frame);
+                av_frame_unref(frame);
+
+                if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+                    std::cout << "End of stream\n";
+                    break;
+                } else if (response < 0) {
+                    std::cout << "Decoding error: " << response << "\n";
+                    break;
+                }
+            }
+
+            av_frame_free(&frame);
+            av_packet_free(&packet);
         }
 
         av_packet_unref(packet);
