@@ -26,9 +26,9 @@ int main() {
     av_dump_format(format_context, 0, "4", 0);
 
     // avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
-    AVStream *stream = avformat_new_stream(format_context, NULL);
     AVPacket* packet = av_packet_alloc();
     int stream_idx = av_find_best_stream(format_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    AVStream* stream = format_context->streams[stream_idx];
 
     const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
     AVCodecContext* codec_context = avcodec_alloc_context3(codec);
@@ -41,6 +41,8 @@ int main() {
     codec_context->pix_fmt = AV_PIX_FMT_YUV420P;  
     codec_context->gop_size = 12;
     codec_context->max_b_frames = 2; 
+
+    avcodec_open2(codec_context, codec, &options);
 
     while (av_read_frame(format_context, packet) >= 0) {
         if (packet->stream_index == stream_idx) {
@@ -74,6 +76,7 @@ int main() {
 
     avformat_close_input(&format_context);
     avformat_free_context(format_context);
+    avcodec_free_context(&codec_context);
     av_packet_free(&packet);
 
     std::cout << "Press C to clip, or Q to quit...\n";
