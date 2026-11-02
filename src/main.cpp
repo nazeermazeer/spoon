@@ -11,6 +11,13 @@ int main() {
 
     avdevice_register_all();
 
+    const AVInputFormat* input_format = av_find_input_format("avfoundation");
+
+    AVDictionary* options = nullptr;
+    av_dict_set(&options, "framerate", "60", 0);
+    av_dict_set(&options, "pixel_format", "uyvy422", 0);
+    av_dict_set(&options, "capture_cursor", "1", 0); 
+
     while (true) {
         // macOS Virtual Key Code 12 = Q
         if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
