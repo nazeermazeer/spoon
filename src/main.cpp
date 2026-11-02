@@ -27,8 +27,10 @@ int main() {
 
     // avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
     AVStream *stream = avformat_new_stream(context, NULL);
+    AVPacket* packet = av_packet_alloc();
+    int stream_idx = av_find_best_stream(context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 
-    while (true) {
+    while (av_read_frame(context, packet) >= 0) {
         // macOS Virtual Key Code 12 = Q
         if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
             break;
@@ -40,9 +42,16 @@ int main() {
             usleep(200000);
         }
 
-        usleep(10000);
+        if (packet->stream_index == stream_idx) {
+            std::cout << "Read packet with size: " << packet->size << "\n";
+        }
+
+        av_packet_unref(packet);
     }
+
     avformat_close_input(&context);
     avformat_free_context(context);
+    av_packet_free(&packet);
+
     return 0;
 }
