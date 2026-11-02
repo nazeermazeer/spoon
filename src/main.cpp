@@ -35,5 +35,6 @@ int main() {
 
         usleep(10000);
     }
+    avformat_close_input(&context);
     return 0;
 }
