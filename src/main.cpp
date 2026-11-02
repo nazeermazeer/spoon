@@ -21,6 +21,9 @@ int main() {
     AVFormatContext* context = avformat_alloc_context();
     avformat_open_input(&context, "1", input_format, &options);
 
+    avformat_find_stream_info(context, &options);
+    av_dump_format(context, 0, "1", 0);
+
     while (true) {
         // macOS Virtual Key Code 12 = Q
         if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
