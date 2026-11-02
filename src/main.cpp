@@ -7,8 +7,6 @@ extern "C" {
 }
 
 int main() {
-    std::cout << "Press C to clip, or Q to quit...\n";
-
     avdevice_register_all();
 
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
@@ -31,17 +29,6 @@ int main() {
     int stream_idx = av_find_best_stream(context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 
     while (av_read_frame(context, packet) >= 0) {
-        // macOS Virtual Key Code 12 = Q
-        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
-            break;
-        }
-
-        // macOS Virtual Key Code 8 = C
-        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 8)) {
-            std::cout << "Clipped!\n";
-            usleep(200000);
-        }
-
         if (packet->stream_index == stream_idx) {
             std::cout << "Read packet with size: " << packet->size << "\n";
         }
@@ -52,6 +39,24 @@ int main() {
     avformat_close_input(&context);
     avformat_free_context(context);
     av_packet_free(&packet);
+
+    std::cout << "Press C to clip, or Q to quit...\n";
+
+    while (true) {
+        // macOS Virtual Key Code 12 = Q
+        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
+            std::cout << "Quitting...\n";
+            break;
+        }
+
+        // macOS Virtual Key Code 8 = C
+        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 8)) {
+            std::cout << "Clipped!\n";
+            usleep(200000);
+        }
+
+        usleep(10000);
+    }
 
     return 0;
 }
