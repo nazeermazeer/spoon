@@ -50,9 +50,9 @@ int main() {
 
             AVFrame* frame = av_frame_alloc();
             
-            int response = avcodec_send_packet(codec_context, packet);
+            int response = avcodec_send_frame(codec_context, frame);
             while (response >= 0) {
-                response = avcodec_receive_frame(codec_context, frame);
+                response = avcodec_receive_packet(codec_context, packet);
                 av_frame_unref(frame);
 
                 if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
@@ -62,6 +62,9 @@ int main() {
                     std::cout << "Decoding error: " << response << "\n";
                     break;
                 }
+
+                av_packet_unref(packet);
+                av_interleaved_write_frame(format_context, packet);
             }
 
             av_frame_free(&frame);
