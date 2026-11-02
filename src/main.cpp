@@ -54,7 +54,6 @@ int main() {
             }
 
             av_frame_free(&frame);
-            av_packet_free(&packet);
         }
 
         av_packet_unref(packet);
