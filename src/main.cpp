@@ -55,8 +55,12 @@ int main() {
                 response = avcodec_receive_packet(codec_context, packet);
                 av_frame_unref(frame);
 
-                if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+                if (response == AVERROR_EOF) {
                     std::cout << "End of stream\n";
+                    response = 0; 
+                    break;
+                } else if (response == AVERROR(EAGAIN)) {
+                    std::cout << "Error in stream\n";
                     break;
                 } else if (response < 0) {
                     std::cout << "Decoding error: " << response << "\n";
