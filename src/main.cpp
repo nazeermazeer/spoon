@@ -44,6 +44,11 @@ int main() {
 
     avcodec_open2(codec_context, codec, &options);
 
+    int header_result = avformat_write_header(format_context, &options);
+    if (header_result < 0) {
+        std::cerr << "error writing header: " << header_result;
+    }
+
     while (av_read_frame(format_context, packet) >= 0) {
         if (packet->stream_index == stream_idx) {
             std::cout << "Read packet with size: " << packet->size << "\n";
@@ -80,6 +85,8 @@ int main() {
     // char error_buf[AV_ERROR_MAX_STRING_SIZE];
     // av_make_error_string(error_buf, AV_ERROR_MAX_STRING_SIZE, av_read_frame(context, packet));
     // std::cout << "error: " << error_buf << "\n";
+
+    av_write_trailer(format_context);
 
     avformat_close_input(&format_context);
     avformat_free_context(format_context);
