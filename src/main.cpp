@@ -18,9 +18,28 @@ int main() {
     }
 
     AVDictionary* options = nullptr;
-    av_dict_set(&options, "framerate", "60", 0);
-    av_dict_set(&options, "pixel_format", "uyvy422", 0);
-    av_dict_set(&options, "capture_cursor", "1", 0); 
+    int result;
+
+    result = av_dict_set(&options, "framerate", "60", 0);
+    if (result < 0) {
+        av_dict_free(&options);
+        std::cerr << "framerate configuration failed with error code " << result;
+        return 1;
+    }
+
+    result = av_dict_set(&options, "pixel_format", "uyvy422", 0);
+    if (result < 0) {
+        av_dict_free(&options);
+        std::cerr << "pixel format configuration failed with error code " << result;
+        return 1;
+    }
+
+    result = av_dict_set(&options, "capture_cursor", "1", 0); 
+    if (result < 0) {
+        av_dict_free(&options);
+        std::cerr << "mouse cursor capture configuration failed with error code " << result;
+        return 1;
+    }
 
     AVFormatContext* format_context = avformat_alloc_context();
     avformat_open_input(&format_context, "4", input_format, &options);
