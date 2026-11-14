@@ -52,6 +52,8 @@ int main() {
 
     ret = avformat_open_input(&format_context, "4", input_format, &options);
     if (ret < 0) {
+        av_dict_free(&options);
+        avformat_free_context(format_context);
         std::cerr << "opening input device failed with error code " << ret;
         return 1;
     }
@@ -59,16 +61,18 @@ int main() {
 
     ret = avformat_find_stream_info(format_context, &options);
     if (ret < 0) {
+        avformat_free_context(format_context);
         std::cerr << "could not read stream info";
         return 1;
     }
     av_dump_format(format_context, 0, "4", 0);
 
-    
+
     // avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
     AVPacket* packet = av_packet_alloc();
     if (!packet) {
         av_packet_free(&packet);
+        avformat_free_context(format_context);
         std::cerr << "packet allocation failed";
         return -1;
     }
