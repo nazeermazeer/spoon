@@ -8,6 +8,12 @@ extern "C" {
 #include <libavutil/rational.h>
 }
 
+std::string ffmpeg_error_string(int errnum) {
+    char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0};
+    av_strerror(errnum, errbuf, sizeof(errbuf));
+    return std::string(errbuf);
+}
+
 int main() {
     avdevice_register_all();
     int ret;
@@ -82,9 +88,7 @@ int main() {
         av_packet_free(&packet);
         avformat_free_context(format_context);
 
-        char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0};
-        av_strerror(stream_idx, errbuf, sizeof(errbuf));
-        std::cerr << "screen capture stream could not be found; " << std::string(errbuf);
+        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(stream_idx);
         return -1;
     }
 
