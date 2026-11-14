@@ -10,6 +10,7 @@ extern "C" {
 
 int main() {
     avdevice_register_all();
+    int result;
 
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
     if (!input_format) {
@@ -18,7 +19,6 @@ int main() {
     }
 
     AVDictionary* options = nullptr;
-    int result;
 
     result = av_dict_set(&options, "framerate", "60", 0);
     if (result < 0) {
@@ -50,7 +50,10 @@ int main() {
         return 1;
     }
 
-    avformat_open_input(&format_context, "4", input_format, &options);
+    result = avformat_open_input(&format_context, "4", input_format, &options);
+    if (result < 0) {
+        std::cerr << "opening input device failed with error code " << result;
+    }
     av_dict_free(&options);
 
     avformat_find_stream_info(format_context, &options);
