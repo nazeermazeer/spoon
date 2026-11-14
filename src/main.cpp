@@ -10,7 +10,7 @@ extern "C" {
 
 int main() {
     avdevice_register_all();
-    int result;
+    int ret;
 
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
     if (!input_format) {
@@ -20,24 +20,24 @@ int main() {
 
     AVDictionary* options = nullptr;
 
-    result = av_dict_set(&options, "framerate", "60", 0);
-    if (result < 0) {
+    ret = av_dict_set(&options, "framerate", "60", 0);
+    if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "framerate configuration failed with error code " << result;
+        std::cerr << "framerate configuration failed with error code " << ret;
         return 1;
     }
 
-    result = av_dict_set(&options, "pixel_format", "uyvy422", 0);
-    if (result < 0) {
+    ret = av_dict_set(&options, "pixel_format", "uyvy422", 0);
+    if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "pixel format configuration failed with error code " << result;
+        std::cerr << "pixel format configuration failed with error code " << ret;
         return 1;
     }
 
-    result = av_dict_set(&options, "capture_cursor", "1", 0); 
-    if (result < 0) {
+    ret = av_dict_set(&options, "capture_cursor", "1", 0); 
+    if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "mouse cursor capture configuration failed with error code " << result;
+        std::cerr << "mouse cursor capture configuration failed with error code " << ret;
         return 1;
     }
 
@@ -50,9 +50,9 @@ int main() {
         return 1;
     }
 
-    result = avformat_open_input(&format_context, "4", input_format, &options);
-    if (result < 0) {
-        std::cerr << "opening input device failed with error code " << result;
+    ret = avformat_open_input(&format_context, "4", input_format, &options);
+    if (ret < 0) {
+        std::cerr << "opening input device failed with error code " << ret;
     }
     av_dict_free(&options);
 
@@ -78,9 +78,9 @@ int main() {
 
     avcodec_open2(codec_context, codec, &options);
 
-    int header_result = avformat_write_header(format_context, &options);
-    if (header_result < 0) {
-        std::cerr << "error writing header: " << header_result;
+    ret = avformat_write_header(format_context, &options);
+    if (ret < 0) {
+        std::cerr << "error writing header: " << ret;
         return -1;
     }
 
