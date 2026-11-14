@@ -81,7 +81,10 @@ int main() {
     if (stream_idx < 0) {
         av_packet_free(&packet);
         avformat_free_context(format_context);
-        std::cerr << "screen capture stream could not be found; failed with error code " << stream_idx;
+
+        char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0};
+        av_strerror(stream_idx, errbuf, sizeof(errbuf));
+        std::cerr << "screen capture stream could not be found; " << std::string(errbuf);
         return -1;
     }
 
