@@ -93,8 +93,23 @@ int main() {
         return -1;
     }
 
+
     const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    if (!codec) {
+        av_packet_free(&packet);
+        avformat_free_context(format_context);
+        std::cerr << "could not find decoder";
+        return -1;
+    }
+
     AVCodecContext* codec_context = avcodec_alloc_context3(codec);
+    if (!codec_context) {
+        av_packet_free(&packet);
+        avformat_free_context(format_context);
+        avcodec_free_context(&codec_context);
+        std::cerr << "codec retrival failed";
+        return -1;
+    }
 
     codec_context->width = 1920;
     codec_context->height = 1080;
