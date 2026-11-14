@@ -173,6 +173,9 @@ int main() {
                 ret = avcodec_receive_frame(codec_context, frame);
                 av_frame_unref(frame);
 
+                av_packet_unref(packet);
+                av_interleaved_write_frame(format_context, packet);
+
                 if (ret == AVERROR_EOF) {
                     std::cout << "End of stream\n";
                     break;
@@ -183,9 +186,6 @@ int main() {
                     std::cout << "Decoding error: " << ret << "\n";
                     break;
                 }
-
-                av_packet_unref(packet);
-                av_interleaved_write_frame(format_context, packet);
             }
         }
 
