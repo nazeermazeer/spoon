@@ -53,6 +53,7 @@ int main() {
     ret = avformat_open_input(&format_context, "4", input_format, &options);
     if (ret < 0) {
         std::cerr << "opening input device failed with error code " << ret;
+        return 1;
     }
     av_dict_free(&options);
 
