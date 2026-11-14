@@ -41,7 +41,15 @@ int main() {
         return 1;
     }
 
+    
     AVFormatContext* format_context = avformat_alloc_context();
+    if (!format_context) {
+        av_dict_free(&options);
+        avformat_free_context(format_context);
+        std::cerr << "cannot allocate format context";
+        return 1;
+    }
+
     avformat_open_input(&format_context, "4", input_format, &options);
     av_dict_free(&options);
 
