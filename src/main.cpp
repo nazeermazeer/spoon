@@ -12,6 +12,10 @@ int main() {
     avdevice_register_all();
 
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
+    if (!input_format) {
+        std::cerr << "avfoundation unavaliable";
+        return -1;
+    }
 
     AVDictionary* options = nullptr;
     av_dict_set(&options, "framerate", "60", 0);
