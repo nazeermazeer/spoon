@@ -120,11 +120,21 @@ int main() {
     codec_context->gop_size = 12;
     codec_context->max_b_frames = 2; 
 
-    avcodec_open2(codec_context, codec, &options);
+    ret = avcodec_open2(codec_context, codec, &options);
+    if (ret < 0) {
+        av_packet_free(&packet);
+        avformat_free_context(format_context);
+        avcodec_free_context(&codec_context);
+        std::cerr << "context opening failed";
+        return -1;
+    }
 
     ret = avformat_write_header(format_context, &options);
     if (ret < 0) {
-        std::cerr << "error writing header: " << ret;
+        av_packet_free(&packet);
+        avformat_free_context(format_context);
+        avcodec_free_context(&codec_context);
+        std::cerr << "header write failed with error code " << ret;
         return -1;
     }
 
