@@ -14,7 +14,7 @@ int main() {
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
     if (!input_format) {
         std::cerr << "avfoundation unavaliable";
-        return -1;
+        return 1;
     }
 
     AVDictionary* options = nullptr;
