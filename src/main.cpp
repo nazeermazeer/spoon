@@ -57,11 +57,22 @@ int main() {
     }
     av_dict_free(&options);
 
-    avformat_find_stream_info(format_context, &options);
+    ret = avformat_find_stream_info(format_context, &options);
+    if (ret < 0) {
+        std::cerr << "could not read stream info";
+        return 1;
+    }
     av_dump_format(format_context, 0, "4", 0);
 
+    
     // avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
     AVPacket* packet = av_packet_alloc();
+    if (!packet) {
+        av_packet_free(&packet);
+        std::cerr << "packet allocation failed";
+        return -1;
+    }
+
     int stream_idx = av_find_best_stream(format_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
     AVStream* stream = format_context->streams[stream_idx];
 
