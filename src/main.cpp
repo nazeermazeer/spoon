@@ -68,7 +68,7 @@ int main() {
     av_dump_format(format_context, 0, "4", 0);
 
 
-    // avformat_alloc_output_context2(&context, NULL, NULL, "output.mp4");
+    avformat_alloc_output_context2(&format_context, NULL, NULL, "output.mp4");
     AVPacket* packet = av_packet_alloc();
     if (!packet) {
         av_packet_free(&packet);
