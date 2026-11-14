@@ -50,7 +50,7 @@ int main() {
         return 1;
     }
 
-    ret = avformat_open_input(&format_context, "4", input_format, &options);
+    ret = avformat_open_input(&format_context, "1", input_format, &options);
     if (ret < 0) {
         av_dict_free(&options);
         avformat_free_context(format_context);
@@ -138,11 +138,29 @@ int main() {
         return -1;
     }
 
-    while (av_read_frame(format_context, packet) >= 0) {
-        if (packet->stream_index == stream_idx) {
-            std::cout << "Read packet with size: " << packet->size << "\n";
+    
+    for (;;) {
+        ret = av_read_frame(format_context, packet);
 
+        if (ret == AVERROR_EOF) {
+            std::cout << "reached end of file\n";
+            break;
+        }
+
+        if (ret < 0) {
+            std::cerr << "frame reading failed with error code " << ret << "\n";
+            break;
+        }
+
+        if (packet->stream_index == stream_idx) {
             AVFrame* frame = av_frame_alloc();
+            if (!frame) {
+                av_frame_free(&frame);
+                std::cerr << "failed to read packet with size " << packet->size << "\n";
+                break;
+            } else {
+                std::cout << "read packet with size: " << packet->size << "\n";
+            }
             
             int response = avcodec_send_frame(codec_context, frame);
             while (response >= 0) {
