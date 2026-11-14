@@ -51,6 +51,7 @@ int main() {
     int header_result = avformat_write_header(format_context, &options);
     if (header_result < 0) {
         std::cerr << "error writing header: " << header_result;
+        return -1;
     }
 
     while (av_read_frame(format_context, packet) >= 0) {
