@@ -29,21 +29,21 @@ int main() {
     ret = av_dict_set(&options, "framerate", "60", 0);
     if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "framerate configuration failed with error code " << ret;
+        std::cerr << "framerate configuration failed; " << ffmpeg_error_string(ret);
         return 1;
     }
 
     ret = av_dict_set(&options, "pixel_format", "uyvy422", 0);
     if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "pixel format configuration failed with error code " << ret;
+        std::cerr << "pixel format configuration failed; " << ffmpeg_error_string(ret);
         return 1;
     }
 
     ret = av_dict_set(&options, "capture_cursor", "1", 0); 
     if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "mouse cursor capture configuration failed with error code " << ret;
+        std::cerr << "mouse cursor capture configuration failed; " << ffmpeg_error_string(ret);
         return 1;
     }
 
@@ -60,7 +60,7 @@ int main() {
     if (ret < 0) {
         av_dict_free(&options);
         avformat_free_context(format_context);
-        std::cerr << "opening input device failed with error code " << ret;
+        std::cerr << "opening input device failed; " << ffmpeg_error_string(ret);
         return 1;
     }
     av_dict_free(&options);
@@ -141,7 +141,7 @@ int main() {
         av_packet_free(&packet);
         avformat_free_context(format_context);
         avcodec_free_context(&codec_context);
-        std::cerr << "header write failed with error code " << ret;
+        std::cerr << "header write failed; " << ffmpeg_error_string(ret);
         return -1;
     }
 
@@ -155,7 +155,7 @@ int main() {
         }
 
         if (ret < 0) {
-            std::cerr << "frame reading failed with error code " << ret << "\n";
+            std::cerr << "frame reading failed; " << ffmpeg_error_string(ret) << "\n";
             break;
         }
 
@@ -184,13 +184,13 @@ int main() {
                 av_interleaved_write_frame(format_context, packet);
 
                 if (ret == AVERROR_EOF) {
-                    std::cout << "End of stream\n";
+                    std::cout << "end of stream\n";
                     break;
                 } else if (ret == AVERROR(EAGAIN)) {
-                    std::cout << "Error in stream\n";
+                    std::cout << "error in stream\n";
                     break;
                 } else if (ret < 0) {
-                    std::cout << "Decoding error: " << ret << "\n";
+                    std::cout << "decoding error: " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
             }
