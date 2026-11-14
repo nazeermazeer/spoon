@@ -78,7 +78,20 @@ int main() {
     }
 
     int stream_idx = av_find_best_stream(format_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    if (stream_idx < 0) {
+        av_packet_free(&packet);
+        avformat_free_context(format_context);
+        std::cerr << "screen capture stream could not be found; failed with error code " << stream_idx;
+        return -1;
+    }
+
     AVStream* stream = format_context->streams[stream_idx];
+    if (!stream) {
+        av_packet_free(&packet);
+        avformat_free_context(format_context);
+        std::cerr << "screen capture stream could not be opened";
+        return -1;
+    }
 
     const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
     AVCodecContext* codec_context = avcodec_alloc_context3(codec);
