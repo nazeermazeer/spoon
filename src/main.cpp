@@ -127,7 +127,7 @@ int main() {
         return -1;
     }
 
-    const AVCodec* output_codec = avcodec_find_decoder(output_stream->codecpar->codec_id);
+    const AVCodec* output_codec = avcodec_find_encoder(AV_CODEC_ID_H264);
     if (!output_codec) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
@@ -166,15 +166,16 @@ int main() {
     input_codec_context->gop_size = 12;
     input_codec_context->max_b_frames = 2; 
 
-    ret = avcodec_parameters_copy(output_stream->codecpar, input_stream->codecpar);
-    if (ret < 0) {
-        av_packet_free(&packet);
-        avformat_free_context(format_input_context);
-        avcodec_free_context(&input_codec_context);
-        avformat_free_context(format_output_context);
-        avcodec_free_context(&output_codec_context);
-        std::cerr << "output codec copy operation failed; " << ffmpeg_error_string(ret);
-        return -1;
+    output_codec_context->width = input_stream->codecpar->width;
+    output_codec_context->height = input_stream->codecpar->height;
+    output_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
+    output_codec_context->time_base = AVRational{1, 60};
+    output_codec_context->framerate = AVRational{60, 1};
+    output_codec_context->bit_rate = 4'000'000;
+    output_codec_context->gop_size = 12;
+
+    if (format_output_context->oformat->flags & AVFMT_GLOBALHEADER) {
+        output_codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
     ret = avcodec_open2(input_codec_context, input_codec, &options);
@@ -184,11 +185,44 @@ int main() {
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "context opening failed";
+        std::cerr << "input context opening failed; " << ffmpeg_error_string(ret);
         return -1;
     }
 
-    ret = avformat_write_header(format_input_context, &options);
+    ret = avcodec_open2(output_codec_context, output_codec, &options);
+    if (ret < 0) {
+        av_packet_free(&packet);
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        avcodec_free_context(&input_codec_context);
+        avcodec_free_context(&output_codec_context);
+        std::cerr << "output context opening failed; " << ffmpeg_error_string(ret);
+        return -1;
+    }
+
+    ret = avcodec_parameters_from_context(output_stream->codecpar, output_codec_context);
+    if (ret < 0) {
+        av_packet_free(&packet);
+        avformat_free_context(format_input_context);
+        avcodec_free_context(&input_codec_context);
+        avformat_free_context(format_output_context);
+        avcodec_free_context(&output_codec_context);
+        std::cerr << "could not set output codec parameters" << ffmpeg_error_string(ret);
+        return -1;
+    }
+
+    ret = avio_open(&format_output_context->pb, "output.mp4", AVIO_FLAG_WRITE);
+    if (ret < 0) {
+        av_packet_free(&packet);
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        avcodec_free_context(&input_codec_context);
+        avcodec_free_context(&output_codec_context);
+        std::cerr << "output file open failed; " << ffmpeg_error_string(ret);
+        return -1;
+    }
+
+    ret = avformat_write_header(format_output_context, &options);
     if (ret < 0) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
@@ -198,6 +232,8 @@ int main() {
         std::cerr << "header write failed; " << ffmpeg_error_string(ret);
         return -1;
     }
+
+    std::cout << "header write succeeded\n";
 
     
     while (true) {
