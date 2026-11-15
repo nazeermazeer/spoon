@@ -48,14 +48,7 @@ int main() {
     }
 
     
-    AVFormatContext* format_input_context = avformat_alloc_context();
-    if (!format_input_context) {
-        av_dict_free(&options);
-        avformat_free_context(format_input_context);
-        std::cerr << "cannot allocate input format context";
-        return 1;
-    }
-
+    AVFormatContext* format_input_context = nullptr;
     ret = avformat_open_input(&format_input_context, "4", input_format, &options);
     if (ret < 0) {
         av_dict_free(&options);
@@ -73,27 +66,23 @@ int main() {
     }
     av_dump_format(format_input_context, 0, "4", 0);
 
-    AVFormatContext* format_output_context = avformat_alloc_context();
-    if (!format_output_context) {
-        avformat_free_context(format_input_context);
-        avformat_free_context(format_output_context);
-        std::cerr << "could not allocate output format context";
-        return 1;
-    }
-
+    
+    AVFormatContext* format_output_context = nullptr;
     ret = avformat_alloc_output_context2(&format_output_context, NULL, NULL, "output.mp4");
     if (ret < 0) {
         av_dict_free(&options);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
         std::cerr << "opening output device failed; " << ffmpeg_error_string(ret);
         return 1;
     }
 
-    
+
     AVPacket* packet = av_packet_alloc();
     if (!packet) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
         std::cerr << "packet allocation failed";
         return -1;
     }
@@ -102,6 +91,7 @@ int main() {
     if (stream_idx < 0) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
 
         std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(stream_idx);
         return -1;
@@ -111,6 +101,8 @@ int main() {
     if (!stream) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+
         std::cerr << "screen capture stream could not be opened";
         return -1;
     }
@@ -120,6 +112,7 @@ int main() {
     if (!codec) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
         std::cerr << "could not find decoder";
         return -1;
     }
@@ -129,6 +122,7 @@ int main() {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avcodec_free_context(&codec_context);
+        avformat_free_context(format_output_context);
         std::cerr << "codec retrival failed";
         return -1;
     }
@@ -146,6 +140,7 @@ int main() {
     if (ret < 0) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
         avcodec_free_context(&codec_context);
         std::cerr << "context opening failed";
         return -1;
@@ -155,6 +150,7 @@ int main() {
     if (ret < 0) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
         avcodec_free_context(&codec_context);
         std::cerr << "header write failed; " << ffmpeg_error_string(ret);
         return -1;
