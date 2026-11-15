@@ -66,8 +66,8 @@ int main() {
     }
     av_dump_format(format_input_context, 0, "4", 0);
 
-    
-    AVFormatContext* format_output_context = nullptr;
+
+    AVFormatContext* format_output_context = nullptr;    
     ret = avformat_alloc_output_context2(&format_output_context, NULL, NULL, "output.mp4");
     if (ret < 0) {
         av_dict_free(&options);
@@ -87,28 +87,48 @@ int main() {
         return -1;
     }
 
-    int stream_idx = av_find_best_stream(format_input_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
-    if (stream_idx < 0) {
+    int input_stream_idx = av_find_best_stream(format_input_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    if (input_stream_idx < 0) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(stream_idx);
+        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(input_stream_idx);
         return -1;
     }
 
-    AVStream* stream = format_input_context->streams[stream_idx];
-    if (!stream) {
+    AVStream* input_stream = format_input_context->streams[input_stream_idx];
+    if (!input_stream) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "screen capture stream could not be opened";
+        std::cerr << "input screen capture stream could not be opened";
+        return -1;
+    }
+
+    int output_stream_idx = av_find_best_stream(format_output_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    if (output_stream_idx < 0) {
+        av_packet_free(&packet);
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+
+        std::cerr << "file write stream could not be found; " << ffmpeg_error_string(output_stream_idx);
+        return -1;
+    }
+
+    AVStream* output_stream = format_output_context->streams[output_stream_idx];
+    if (!output_stream) {
+        av_packet_free(&packet);
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+
+        std::cerr << "output screen capture stream could not be opened";
         return -1;
     }
 
 
-    const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    const AVCodec* codec = avcodec_find_decoder(input_stream->codecpar->codec_id);
     if (!codec) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
@@ -179,7 +199,7 @@ int main() {
             std::cout << "read packet with size: " << packet->size << "\n";
         }
 
-        if (packet->stream_index == stream_idx) {
+        if (packet->stream_index == input_stream_idx) {
             ret = avcodec_send_packet(codec_context, packet);
             if (ret < 0) {
                 av_frame_free(&frame);
