@@ -107,17 +107,7 @@ int main() {
         return -1;
     }
 
-    int output_stream_idx = av_find_best_stream(format_output_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
-    if (output_stream_idx < 0) {
-        av_packet_free(&packet);
-        avformat_free_context(format_input_context);
-        avformat_free_context(format_output_context);
-
-        std::cerr << "file write stream could not be found; " << ffmpeg_error_string(output_stream_idx);
-        return -1;
-    }
-
-    AVStream* output_stream = format_output_context->streams[output_stream_idx];
+    AVStream* output_stream = avformat_new_stream(format_output_context, nullptr);
     if (!output_stream) {
         av_packet_free(&packet);
         avformat_free_context(format_input_context);
