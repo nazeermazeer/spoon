@@ -262,7 +262,7 @@ int main() {
             ret = avcodec_send_packet(input_codec_context, packet);
             if (ret < 0) {
                 av_frame_free(&frame);
-                std::cerr << "packet sending failed with error code " << ret << "\n";
+                std::cerr << "packet sending failed; " << ffmpeg_error_string(ret) << "\n";
                 break;
             }
 
