@@ -77,19 +77,8 @@ int main() {
         return 1;
     }
 
-
-    AVPacket* packet = av_packet_alloc();
-    if (!packet) {
-        av_packet_free(&packet);
-        avformat_free_context(format_input_context);
-        avformat_free_context(format_output_context);
-        std::cerr << "packet allocation failed";
-        return -1;
-    }
-
     int input_stream_idx = av_find_best_stream(format_input_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
     if (input_stream_idx < 0) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
@@ -99,7 +88,6 @@ int main() {
 
     AVStream* input_stream = format_input_context->streams[input_stream_idx];
     if (!input_stream) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
@@ -109,7 +97,6 @@ int main() {
 
     AVStream* output_stream = avformat_new_stream(format_output_context, nullptr);
     if (!output_stream) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
@@ -120,7 +107,6 @@ int main() {
 
     const AVCodec* input_codec = avcodec_find_decoder(input_stream->codecpar->codec_id);
     if (!input_codec) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         std::cerr << "could not find input decoder";
@@ -129,7 +115,6 @@ int main() {
 
     const AVCodec* output_codec = avcodec_find_encoder(AV_CODEC_ID_H264);
     if (!output_codec) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         std::cerr << "could not find output decoder";
@@ -138,7 +123,6 @@ int main() {
 
     AVCodecContext* input_codec_context = avcodec_alloc_context3(input_codec);
     if (!input_codec_context) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avcodec_free_context(&input_codec_context);
         avformat_free_context(format_output_context);
@@ -148,7 +132,6 @@ int main() {
 
     AVCodecContext* output_codec_context = avcodec_alloc_context3(output_codec);
     if (!output_codec_context) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avcodec_free_context(&input_codec_context);
         avformat_free_context(format_output_context);
@@ -180,7 +163,6 @@ int main() {
 
     ret = avcodec_open2(input_codec_context, input_codec, &options);
     if (ret < 0) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
@@ -191,7 +173,6 @@ int main() {
 
     ret = avcodec_open2(output_codec_context, output_codec, &options);
     if (ret < 0) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
@@ -202,7 +183,6 @@ int main() {
 
     ret = avcodec_parameters_from_context(output_stream->codecpar, output_codec_context);
     if (ret < 0) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avcodec_free_context(&input_codec_context);
         avformat_free_context(format_output_context);
@@ -213,7 +193,6 @@ int main() {
 
     ret = avio_open(&format_output_context->pb, "output.mp4", AVIO_FLAG_WRITE);
     if (ret < 0) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
@@ -224,7 +203,6 @@ int main() {
 
     ret = avformat_write_header(format_output_context, &options);
     if (ret < 0) {
-        av_packet_free(&packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
@@ -235,6 +213,15 @@ int main() {
 
     std::cout << "header write succeeded\n";
 
+
+    AVPacket* packet = av_packet_alloc();
+    if (!packet) {
+        av_packet_free(&packet);
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        std::cerr << "packet allocation failed";
+        return -1;
+    }
     
     while (true) {
         AVFrame* frame = av_frame_alloc();
