@@ -293,10 +293,6 @@ int main() {
         av_frame_free(&frame);
     }
 
-    // char error_buf[AV_ERROR_MAX_STRING_SIZE];
-    // av_make_error_string(error_buf, AV_ERROR_MAX_STRING_SIZE, av_read_frame(context, packet));
-    // std::cout << "error: " << error_buf << "\n";
-
     av_write_trailer(format_output_context);
 
     avformat_close_input(&format_input_context);
