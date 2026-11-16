@@ -237,7 +237,17 @@ int main() {
 
     
     while (true) {
-        ret = av_read_frame(format_input_context, packet);
+        AVFrame* frame = av_frame_alloc();
+        if (!frame) {
+            av_frame_free(&frame);
+            av_packet_unref(packet);
+            std::cerr << "failed to read packet with size " << packet->size << "\n";
+            break;
+        } else {
+            std::cout << "read packet with size: " << packet->size << "\n";
+        }
+
+        ret = avcodec_send_frame(output_codec_context, frame);
 
         if (ret == AVERROR_EOF) {
             std::cout << "reached end of file\n";
@@ -249,29 +259,18 @@ int main() {
             break;
         }
 
-        AVFrame* frame = av_frame_alloc();
-        if (!frame) {
-            av_frame_free(&frame);
-            std::cerr << "failed to read packet with size " << packet->size << "\n";
-            break;
-        } else {
-            std::cout << "read packet with size: " << packet->size << "\n";
-        }
-
+        // make sure we are copying the correct video stream and not something like captions
         if (packet->stream_index == input_stream_idx) {
-            ret = avcodec_send_packet(input_codec_context, packet);
+            ret = avcodec_send_packet(output_codec_context, packet);
             if (ret < 0) {
                 av_frame_free(&frame);
+                av_packet_unref(packet);
                 std::cerr << "packet sending failed; " << ffmpeg_error_string(ret) << "\n";
                 break;
             }
 
-            while (true) {
-                ret = avcodec_receive_frame(input_codec_context, frame);
-                av_frame_unref(frame);
-
-                av_packet_unref(packet);
-                av_interleaved_write_frame(format_input_context, packet);
+            while (ret >= 0) {
+                ret = avcodec_receive_packet(output_codec_context, packet);
 
                 if (ret == AVERROR_EOF) {
                     std::cout << "end of stream\n";
@@ -283,6 +282,10 @@ int main() {
                     std::cout << "decoding error: " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
+
+                av_interleaved_write_frame(format_output_context, packet);
+
+                av_packet_unref(packet);
             }
         }
 
@@ -294,7 +297,7 @@ int main() {
     // av_make_error_string(error_buf, AV_ERROR_MAX_STRING_SIZE, av_read_frame(context, packet));
     // std::cout << "error: " << error_buf << "\n";
 
-    av_write_trailer(format_input_context);
+    av_write_trailer(format_output_context);
 
     avformat_close_input(&format_input_context);
     avformat_free_context(format_input_context);
