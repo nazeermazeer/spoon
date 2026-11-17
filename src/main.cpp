@@ -247,10 +247,6 @@ int main() {
         }
 
         ret = avcodec_send_packet(input_codec_context, input_packet);
-        if (ret == AVERROR_EOF) {
-            std::cout << "reached end of file\n";
-            break;
-        }
         if (ret < 0) {
             std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
             break;
