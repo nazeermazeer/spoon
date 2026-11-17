@@ -214,51 +214,62 @@ int main() {
     std::cout << "header write succeeded\n";
 
 
-    AVPacket* packet = av_packet_alloc();
-    if (!packet) {
-        av_packet_free(&packet);
+    AVPacket* input_packet = av_packet_alloc();
+    if (!input_packet) {
+        av_packet_free(&input_packet);
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        std::cerr << "packet allocation failed";
+        return -1;
+    }
+
+    AVPacket* output_packet = av_packet_alloc();
+    if (!output_packet) {
+        av_packet_free(&input_packet);
+        av_packet_free(&output_packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
         std::cerr << "packet allocation failed";
         return -1;
     }
     
+    AVFrame* frame = av_frame_alloc();
+
     while (true) {
-        AVFrame* frame = av_frame_alloc();
-        if (!frame) {
-            av_frame_free(&frame);
-            av_packet_unref(packet);
-            std::cerr << "failed to read packet with size " << packet->size << "\n";
-            break;
-        } else {
-            std::cout << "read packet with size: " << packet->size << "\n";
-        }
-
-        ret = avcodec_send_frame(output_codec_context, frame);
-
+        ret = av_read_frame(format_input_context, input_packet);
         if (ret == AVERROR_EOF) {
             std::cout << "reached end of file\n";
             break;
         }
-
         if (ret < 0) {
             std::cerr << "frame reading failed; " << ffmpeg_error_string(ret) << "\n";
             break;
         }
 
+        ret = avcodec_send_packet(output_codec_context, input_packet);
+        if (ret == AVERROR_EOF) {
+            std::cout << "reached end of file\n";
+            break;
+        }
+        if (ret < 0) {
+            std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
+            break;
+        }
+        
         // make sure we are copying the correct video stream and not something like captions
-        if (packet->stream_index == input_stream_idx) {
-            ret = avcodec_send_packet(output_codec_context, packet);
+        if (input_packet->stream_index == input_stream_idx) {
+            std::cout << "read packet with size: " << input_packet->size << "\n";
+
+            ret = avcodec_receive_frame(input_codec_context, frame);
             if (ret < 0) {
                 av_frame_free(&frame);
-                av_packet_unref(packet);
-                std::cerr << "packet sending failed; " << ffmpeg_error_string(ret) << "\n";
+                av_packet_unref(input_packet);
+                std::cerr << "frame read failed; " << ffmpeg_error_string(ret) << "\n";
                 break;
             }
 
             while (ret >= 0) {
-                ret = avcodec_receive_packet(output_codec_context, packet);
-
+                ret = avcodec_send_packet(input_codec_context, input_packet);
                 if (ret == AVERROR_EOF) {
                     std::cout << "end of stream\n";
                     break;
@@ -270,13 +281,13 @@ int main() {
                     break;
                 }
 
-                av_interleaved_write_frame(format_output_context, packet);
+                av_interleaved_write_frame(format_output_context, input_packet);
 
-                av_packet_unref(packet);
+                av_packet_unref(input_packet);
             }
         }
 
-        av_packet_unref(packet);
+        av_packet_unref(input_packet);
         av_frame_free(&frame);
     }
 
@@ -287,7 +298,8 @@ int main() {
     avformat_free_context(format_output_context);
     avcodec_free_context(&input_codec_context);
     avcodec_free_context(&output_codec_context);
-    av_packet_free(&packet);
+    av_packet_free(&input_packet);
+    av_packet_free(&output_packet);
 
     std::cout << "Press C to clip, or Q to quit...\n";
 
