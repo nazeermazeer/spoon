@@ -270,8 +270,7 @@ int main() {
                     std::cout << "end of stream\n";
                     break;
                 } else if (ret == AVERROR(EAGAIN)) {
-                    std::cout << "error in stream\n";
-                    break;
+                    std::cout << "sending more frames\n";
                 } else if (ret < 0) {
                     std::cout << "decoding error: " << ffmpeg_error_string(ret) << "\n";
                     break;
