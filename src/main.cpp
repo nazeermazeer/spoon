@@ -246,7 +246,7 @@ int main() {
             break;
         }
 
-        ret = avcodec_send_packet(output_codec_context, input_packet);
+        ret = avcodec_send_packet(input_codec_context, input_packet);
         if (ret == AVERROR_EOF) {
             std::cout << "reached end of file\n";
             break;
