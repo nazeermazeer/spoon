@@ -256,15 +256,15 @@ int main() {
         if (input_packet->stream_index == input_stream_idx) {
             std::cout << "read packet with size: " << input_packet->size << "\n";
 
-            ret = avcodec_receive_frame(input_codec_context, frame);
-            if (ret < 0) {
-                av_frame_free(&frame);
-                av_packet_unref(input_packet);
-                std::cerr << "frame read failed; " << ffmpeg_error_string(ret) << "\n";
-                break;
-            }
+            while (true) {
+                ret = avcodec_receive_frame(input_codec_context, frame);
+                if (ret < 0) {
+                    av_frame_free(&frame);
+                    av_packet_unref(input_packet);
+                    std::cerr << "frame read failed; " << ffmpeg_error_string(ret) << "\n";
+                    break;
+                }
 
-            while (ret >= 0) {
                 ret = avcodec_send_packet(input_codec_context, input_packet);
                 if (ret == AVERROR_EOF) {
                     std::cout << "end of stream\n";
