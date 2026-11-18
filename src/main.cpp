@@ -276,6 +276,21 @@ int main() {
                     break;
                 }
 
+                ret = avcodec_send_frame(output_codec_context, frame);
+                if (ret < 0) {
+                    av_frame_free(&frame);
+                    av_packet_unref(input_packet);
+                    std::cerr << "frame send failed; " << ffmpeg_error_string(ret) << "\n";
+                    break;
+                }
+                ret = avcodec_receive_packet(output_codec_context, output_packet);
+                if (ret < 0) {
+                    av_frame_free(&frame);
+                    av_packet_unref(input_packet);
+                    std::cerr << "frame recieve failed; " << ffmpeg_error_string(ret) << "\n";
+                    break;
+                }
+
                 av_interleaved_write_frame(format_output_context, input_packet);
 
                 av_packet_unref(input_packet);
