@@ -264,6 +264,8 @@ int main() {
                     break;
                 }
 
+                std::cout << "frame recieve successful\n";
+
                 ret = avcodec_send_frame(output_codec_context, frame);
                 if (ret < 0) {
                     av_frame_free(&frame);
@@ -272,7 +274,15 @@ int main() {
                     break;
                 }
 
+                std::cout << "frame send successful\n";
+
                 ret = avcodec_receive_packet(output_codec_context, output_packet);
+                if (ret == AVERROR(EAGAIN)) {
+                    av_frame_free(&frame);
+                    av_packet_unref(input_packet);
+                    std::cout << "reading more frames\n";
+                    continue;
+                }
                 if (ret < 0) {
                     av_frame_free(&frame);
                     av_packet_unref(input_packet);
@@ -280,7 +290,9 @@ int main() {
                     break;
                 }
 
-                av_interleaved_write_frame(format_output_context, input_packet);
+                std::cout << "packet recieve successful\n";
+
+                av_interleaved_write_frame(format_output_context, output_packet);
 
                 av_packet_unref(input_packet);
             }
