@@ -235,25 +235,24 @@ int main() {
     
     AVFrame* frame = av_frame_alloc();
 
-    while (true) {
-        ret = av_read_frame(format_input_context, input_packet);
-        if (ret == AVERROR_EOF) {
-            std::cout << "reached end of file\n";
-            break;
-        }
-        if (ret < 0) {
-            std::cerr << "frame reading failed; " << ffmpeg_error_string(ret) << "\n";
-            break;
-        }
-
-        ret = avcodec_send_packet(input_codec_context, input_packet);
-        if (ret < 0) {
-            std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
-            break;
-        }
-        
+    while (true) {   
         // make sure we are copying the correct video stream and not something like captions
         if (input_packet->stream_index == input_stream_idx) {
+            ret = av_read_frame(format_input_context, input_packet);
+            if (ret == AVERROR_EOF) {
+                std::cout << "reached end of file\n";
+                break;
+            }
+            if (ret < 0) {
+                std::cerr << "frame reading failed; " << ffmpeg_error_string(ret) << "\n";
+                break;
+            }
+
+            ret = avcodec_send_packet(input_codec_context, input_packet);
+            if (ret < 0) {
+                std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
+                break;
+            }
             std::cout << "read packet with size: " << input_packet->size << "\n";
 
             while (true) {
@@ -265,12 +264,13 @@ int main() {
                     break;
                 }
 
-                ret = avcodec_send_packet(input_codec_context, input_packet);
+                ret = avcodec_send_packet(input_codec_context, output_packet);
                 if (ret == AVERROR_EOF) {
                     std::cout << "end of stream\n";
                     break;
                 } else if (ret == AVERROR(EAGAIN)) {
                     std::cout << "sending more frames\n";
+                    continue;
                 } else if (ret < 0) {
                     std::cout << "decoding error: " << ffmpeg_error_string(ret) << "\n";
                     break;
