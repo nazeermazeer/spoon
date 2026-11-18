@@ -237,6 +237,10 @@ int main() {
 
     while (true) {   
         ret = av_read_frame(format_input_context, input_packet);
+        if (ret == AVERROR(EAGAIN)) {
+            usleep(1000);
+            continue;
+        }
         if (ret == AVERROR_EOF) {
             std::cout << "reached end of file\n";
             break;
@@ -258,6 +262,9 @@ int main() {
 
             while (true) {
                 ret = avcodec_receive_frame(input_codec_context, frame);
+                if (ret == AVERROR(EAGAIN)) {
+                    break;
+                }
                 if (ret < 0) {
                     av_frame_free(&frame);
                     av_packet_unref(input_packet);
@@ -295,7 +302,6 @@ int main() {
                 av_interleaved_write_frame(format_output_context, output_packet);
 
                 av_packet_unref(input_packet);
-                av_frame_free(&frame);
             }
         }
 
@@ -311,6 +317,7 @@ int main() {
     avcodec_free_context(&output_codec_context);
     av_packet_free(&input_packet);
     av_packet_free(&output_packet);
+    av_frame_free(&frame);
 
     std::cout << "Press C to clip, or Q to quit...\n";
 
