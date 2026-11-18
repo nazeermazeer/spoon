@@ -314,7 +314,10 @@ int main() {
         av_packet_unref(input_packet);
     }
 
-    av_write_trailer(format_output_context);
+    ret = av_write_trailer(format_output_context);
+    if (ret < 0) {
+        std::cerr << "trailer write failed; " << ffmpeg_error_string(ret) << "\n";
+    }
 
     avformat_close_input(&format_input_context);
     avformat_free_context(format_input_context);
