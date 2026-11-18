@@ -248,6 +248,11 @@ int main() {
                 break;
             }
 
+            ret = avcodec_send_packet(input_codec_context, input_packet);
+            if (ret < 0) {
+                std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
+                break;
+            }
             std::cout << "read packet with size: " << input_packet->size << "\n";
 
             while (true) {
@@ -255,19 +260,7 @@ int main() {
                 if (ret < 0) {
                     av_frame_free(&frame);
                     av_packet_unref(input_packet);
-                    std::cerr << "frame read failed; " << ffmpeg_error_string(ret) << "\n";
-                    break;
-                }
-
-                ret = avcodec_send_packet(input_codec_context, output_packet);
-                if (ret == AVERROR_EOF) {
-                    std::cout << "end of stream\n";
-                    break;
-                } else if (ret == AVERROR(EAGAIN)) {
-                    std::cout << "sending more frames\n";
-                    continue;
-                } else if (ret < 0) {
-                    std::cout << "decoding error: " << ffmpeg_error_string(ret) << "\n";
+                    std::cerr << "frame recieve failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
 
@@ -278,11 +271,12 @@ int main() {
                     std::cerr << "frame send failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
+
                 ret = avcodec_receive_packet(output_codec_context, output_packet);
                 if (ret < 0) {
                     av_frame_free(&frame);
                     av_packet_unref(input_packet);
-                    std::cerr << "frame recieve failed; " << ffmpeg_error_string(ret) << "\n";
+                    std::cerr << "packet recieve failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
 
