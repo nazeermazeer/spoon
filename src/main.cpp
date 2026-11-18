@@ -248,11 +248,6 @@ int main() {
                 break;
             }
 
-            ret = avcodec_send_packet(input_codec_context, input_packet);
-            if (ret < 0) {
-                std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
-                break;
-            }
             std::cout << "read packet with size: " << input_packet->size << "\n";
 
             while (true) {
