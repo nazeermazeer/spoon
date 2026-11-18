@@ -235,7 +235,13 @@ int main() {
     
     AVFrame* frame = av_frame_alloc();
 
-    while (true) {   
+    while (true) {  
+        // macOS Virtual Key Code 12 = Q
+        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
+            std::cout << "Quitting...\n";
+            break;
+        }
+
         ret = av_read_frame(format_input_context, input_packet);
         if (ret == AVERROR(EAGAIN)) {
             usleep(1000);
