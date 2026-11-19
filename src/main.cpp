@@ -305,7 +305,13 @@ int main() {
 
                 std::cout << "packet recieve successful\n";
 
-                av_interleaved_write_frame(format_output_context, output_packet);
+                ret = av_interleaved_write_frame(format_output_context, output_packet);
+                if (ret < 0) {
+                    av_frame_free(&frame);
+                    av_packet_unref(input_packet);
+                    std::cerr << "write frame failed; " << ffmpeg_error_string(ret) << "\n";
+                    break;
+                }
 
                 av_packet_unref(input_packet);
             }
