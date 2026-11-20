@@ -6,6 +6,7 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/rational.h>
+#include <libswscale/swscale.h>
 }
 
 std::string ffmpeg_error_string(int errnum) {
@@ -157,8 +158,19 @@ int main() {
     output_codec_context->bit_rate = 4'000'000;
     output_codec_context->gop_size = 12;
 
+    // produce global headers if required
     if (format_output_context->oformat->flags & AVFMT_GLOBALHEADER) {
         output_codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    }
+
+    ret = avcodec_parameters_to_context(input_codec_context, input_stream->codecpar);
+    if (ret < 0) {
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        avcodec_free_context(&input_codec_context);
+        avcodec_free_context(&output_codec_context);
+        std::cerr << "input parameters failed; " << ffmpeg_error_string(ret);
+        return -1;
     }
 
     ret = avcodec_open2(input_codec_context, input_codec, &options);
@@ -232,8 +244,19 @@ int main() {
         std::cerr << "packet allocation failed";
         return -1;
     }
-    
-    AVFrame* frame = av_frame_alloc();
+
+    AVFrame* input_frame = av_frame_alloc();
+    AVFrame* output_frame = av_frame_alloc();
+    output_frame->format = output_codec_context->pix_fmt;
+    output_frame->width = output_codec_context->width;
+    output_frame->height = output_codec_context->height;
+    av_frame_get_buffer(output_frame, 32);
+
+    SwsContext* sws_context = sws_getContext(
+        input_codec_context->width, input_codec_context->height, input_codec_context->pix_fmt,
+        output_codec_context->width, output_codec_context->height, output_codec_context->pix_fmt,
+        SWS_BILINEAR, nullptr, nullptr, nullptr
+    );
 
     while (true) {  
         // macOS Virtual Key Code 12 = Q
@@ -267,22 +290,33 @@ int main() {
             std::cout << "read packet with size: " << input_packet->size << "\n";
 
             while (true) {
-                ret = avcodec_receive_frame(input_codec_context, frame);
+                ret = avcodec_receive_frame(input_codec_context, input_frame);
                 if (ret == AVERROR(EAGAIN)) {
                     break;
                 }
                 if (ret < 0) {
-                    av_frame_free(&frame);
+                    av_frame_free(&input_frame);
                     av_packet_unref(input_packet);
                     std::cerr << "frame recieve failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
 
+                ret = sws_scale(
+                    sws_context, input_frame->data, input_frame->linesize, 0, 
+                    input_frame->height, output_frame->data, output_frame->linesize
+                );
+                if (ret < 0) {
+                    av_frame_free(&input_frame);
+                    av_packet_unref(input_packet);
+                    std::cerr << "frame conversion failed; " << ffmpeg_error_string(ret) << "\n";
+                    break;
+                }
+
                 std::cout << "frame recieve successful\n";
 
-                ret = avcodec_send_frame(output_codec_context, frame);
+                ret = avcodec_send_frame(output_codec_context, output_frame);
                 if (ret < 0) {
-                    av_frame_free(&frame);
+                    av_frame_free(&input_frame);
                     av_packet_unref(input_packet);
                     std::cerr << "frame send failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
@@ -297,7 +331,7 @@ int main() {
                     break;
                 }
                 if (ret < 0) {
-                    av_frame_free(&frame);
+                    av_frame_free(&input_frame);
                     av_packet_unref(input_packet);
                     std::cerr << "packet recieve failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
@@ -307,7 +341,7 @@ int main() {
 
                 ret = av_interleaved_write_frame(format_output_context, output_packet);
                 if (ret < 0) {
-                    av_frame_free(&frame);
+                    av_frame_free(&input_frame);
                     av_packet_unref(input_packet);
                     std::cerr << "write frame failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
@@ -332,7 +366,7 @@ int main() {
     avcodec_free_context(&output_codec_context);
     av_packet_free(&input_packet);
     av_packet_free(&output_packet);
-    av_frame_free(&frame);
+    av_frame_free(&input_frame);
 
     std::cout << "Press C to clip, or Q to quit...\n";
 
