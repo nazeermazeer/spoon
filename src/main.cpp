@@ -21,7 +21,7 @@ int main() {
 
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
     if (!input_format) {
-        std::cerr << "avfoundation unavaliable";
+        std::cerr << "avfoundation unavaliable\n";
         return 1;
     }
 
@@ -30,21 +30,21 @@ int main() {
     ret = av_dict_set(&options, "framerate", "60", 0);
     if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "framerate configuration failed; " << ffmpeg_error_string(ret);
+        std::cerr << "framerate configuration failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
     ret = av_dict_set(&options, "pixel_format", "uyvy422", 0);
     if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "pixel format configuration failed; " << ffmpeg_error_string(ret);
+        std::cerr << "pixel format configuration failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
     ret = av_dict_set(&options, "capture_cursor", "1", 0); 
     if (ret < 0) {
         av_dict_free(&options);
-        std::cerr << "mouse cursor capture configuration failed; " << ffmpeg_error_string(ret);
+        std::cerr << "mouse cursor capture configuration failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
@@ -54,7 +54,7 @@ int main() {
     if (ret < 0) {
         av_dict_free(&options);
         avformat_free_context(format_input_context);
-        std::cerr << "opening input device failed; " << ffmpeg_error_string(ret);
+        std::cerr << "opening input device failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
     av_dict_free(&options);
@@ -62,7 +62,7 @@ int main() {
     ret = avformat_find_stream_info(format_input_context, &options);
     if (ret < 0) {
         avformat_free_context(format_input_context);
-        std::cerr << "could not read stream info";
+        std::cerr << "could not read stream info\n";
         return 1;
     }
     av_dump_format(format_input_context, 0, "4", 0);
@@ -74,7 +74,7 @@ int main() {
         av_dict_free(&options);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
-        std::cerr << "opening output device failed; " << ffmpeg_error_string(ret);
+        std::cerr << "opening output device failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
@@ -83,7 +83,7 @@ int main() {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(input_stream_idx);
+        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(input_stream_idx) << "\n";
         return -1;
     }
 
@@ -92,7 +92,7 @@ int main() {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "input screen capture stream could not be opened";
+        std::cerr << "input screen capture stream could not be opened\n";
         return -1;
     }
 
@@ -101,7 +101,7 @@ int main() {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "output screen capture stream could not be opened";
+        std::cerr << "output screen capture stream could not be opened\n";
         return -1;
     }
 
@@ -110,7 +110,7 @@ int main() {
     if (!input_codec) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
-        std::cerr << "could not find input decoder";
+        std::cerr << "could not find input decoder\n";
         return -1;
     }
 
@@ -118,7 +118,7 @@ int main() {
     if (!output_codec) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
-        std::cerr << "could not find output decoder";
+        std::cerr << "could not find output decoder\n";
         return -1;
     }
 
@@ -127,7 +127,7 @@ int main() {
         avformat_free_context(format_input_context);
         avcodec_free_context(&input_codec_context);
         avformat_free_context(format_output_context);
-        std::cerr << "input codec retrival failed";
+        std::cerr << "input codec retrival failed\n";
         return -1;
     }
 
@@ -137,7 +137,7 @@ int main() {
         avcodec_free_context(&input_codec_context);
         avformat_free_context(format_output_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "output codec retrival failed";
+        std::cerr << "output codec retrival failed\n";
         return -1;
     }
 
@@ -169,7 +169,7 @@ int main() {
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "input parameters failed; " << ffmpeg_error_string(ret);
+        std::cerr << "input parameters failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
@@ -179,7 +179,7 @@ int main() {
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "input context opening failed; " << ffmpeg_error_string(ret);
+        std::cerr << "input context opening failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
@@ -189,7 +189,7 @@ int main() {
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "output context opening failed; " << ffmpeg_error_string(ret);
+        std::cerr << "output context opening failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
@@ -199,7 +199,7 @@ int main() {
         avcodec_free_context(&input_codec_context);
         avformat_free_context(format_output_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "could not set output codec parameters" << ffmpeg_error_string(ret);
+        std::cerr << "could not set output codec parameters" << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
@@ -209,7 +209,7 @@ int main() {
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "output file open failed; " << ffmpeg_error_string(ret);
+        std::cerr << "output file open failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
@@ -220,7 +220,7 @@ int main() {
         avformat_free_context(format_output_context);
         avcodec_free_context(&input_codec_context);
         avcodec_free_context(&output_codec_context);
-        std::cerr << "header write failed; " << ffmpeg_error_string(ret);
+        std::cerr << "header write failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
@@ -232,7 +232,7 @@ int main() {
         av_packet_free(&input_packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
-        std::cerr << "packet allocation failed";
+        std::cerr << "packet allocation failed\n";
         return -1;
     }
 
@@ -242,7 +242,7 @@ int main() {
         av_packet_free(&output_packet);
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
-        std::cerr << "packet allocation failed";
+        std::cerr << "packet allocation failed\n";
         return -1;
     }
 
