@@ -166,7 +166,24 @@ int main() {
     output_codec_context->gop_size = 12;
 
     ret = av_opt_set(output_codec_context->priv_data, "preset", "medium", 0);
+    if (ret < 0) {
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        avcodec_free_context(&input_codec_context);
+        avcodec_free_context(&output_codec_context);
+        std::cerr << "medium preset configuration failed; " << ffmpeg_error_string(ret) << "\n";
+        return 1;
+    }
+
     ret = av_opt_set(output_codec_context->priv_data, "crf", "18", 0);
+    if (ret < 0) {
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+        avcodec_free_context(&input_codec_context);
+        avcodec_free_context(&output_codec_context);
+        std::cerr << "crf configuration failed; " << ffmpeg_error_string(ret) << "\n";
+        return 1;
+    }
 
     // produce global headers if required
     if (format_output_context->oformat->flags & AVFMT_GLOBALHEADER) {
