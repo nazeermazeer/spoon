@@ -269,6 +269,8 @@ int main() {
         SWS_BILINEAR, nullptr, nullptr, nullptr
     );
 
+    std::cout << "Press C to clip, or Q to quit...\n";
+
     while (true) {  
         // macOS Virtual Key Code 12 = Q
         if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12) && !quit) {
@@ -399,24 +401,6 @@ int main() {
     av_packet_free(&input_packet);
     av_packet_free(&output_packet);
     av_frame_free(&input_frame);
-
-    std::cout << "Press C to clip, or Q to quit...\n";
-
-    while (true) {
-        // macOS Virtual Key Code 12 = Q
-        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
-            std::cout << "Quitting...\n";
-            break;
-        }
-
-        // macOS Virtual Key Code 8 = C
-        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 8)) {
-            std::cout << "Clipped!\n";
-            usleep(200000);
-        }
-
-        usleep(10000);
-    }
 
     return 0;
 }
