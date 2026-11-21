@@ -89,7 +89,16 @@ int main() {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(input_video_stream_idx) << "\n";
+        std::cerr << "screen capture video stream could not be found; " << ffmpeg_error_string(input_video_stream_idx) << "\n";
+        return -1;
+    }
+
+    int input_audio_stream_idx = av_find_best_stream(format_input_context, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+    if (input_audio_stream_idx < 0) {
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+
+        std::cerr << "screen capture audio stream could not be found; " << ffmpeg_error_string(input_video_stream_idx) << "\n";
         return -1;
     }
 
@@ -98,7 +107,16 @@ int main() {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "input screen capture stream could not be opened\n";
+        std::cerr << "input screen capture video stream could not be opened\n";
+        return -1;
+    }
+
+    AVStream* input_audio_stream = format_input_context->streams[input_audio_stream_idx];
+    if (!input_audio_stream) {
+        avformat_free_context(format_input_context);
+        avformat_free_context(format_output_context);
+
+        std::cerr << "input screen capture audio stream could not be opened\n";
         return -1;
     }
 
