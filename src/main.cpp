@@ -303,7 +303,11 @@ int main() {
 
             if (quit) {
                 ret = avcodec_send_frame(output_codec_context, nullptr);
-                if (ret < 0) {
+                if (ret == AVERROR_EOF) {
+                    av_frame_free(&input_frame);
+                    av_packet_unref(input_packet);
+                    break;
+                } else if (ret < 0) {
                     av_frame_free(&input_frame);
                     av_packet_unref(input_packet);
                     std::cerr << "frame flush failed; " << ffmpeg_error_string(ret) << "\n";
