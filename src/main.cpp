@@ -84,17 +84,17 @@ int main() {
         return 1;
     }
 
-    int input_stream_idx = av_find_best_stream(format_input_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
-    if (input_stream_idx < 0) {
+    int input_video_stream_idx = av_find_best_stream(format_input_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    if (input_video_stream_idx < 0) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
-        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(input_stream_idx) << "\n";
+        std::cerr << "screen capture stream could not be found; " << ffmpeg_error_string(input_video_stream_idx) << "\n";
         return -1;
     }
 
-    AVStream* input_stream = format_input_context->streams[input_stream_idx];
-    if (!input_stream) {
+    AVStream* input_video_stream = format_input_context->streams[input_video_stream_idx];
+    if (!input_video_stream) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
@@ -102,8 +102,8 @@ int main() {
         return -1;
     }
 
-    AVStream* output_stream = avformat_new_stream(format_output_context, nullptr);
-    if (!output_stream) {
+    AVStream* output_video_stream = avformat_new_stream(format_output_context, nullptr);
+    if (!output_video_stream) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
 
@@ -112,7 +112,7 @@ int main() {
     }
 
 
-    const AVCodec* input_codec = avcodec_find_decoder(input_stream->codecpar->codec_id);
+    const AVCodec* input_codec = avcodec_find_decoder(input_video_stream->codecpar->codec_id);
     if (!input_codec) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
@@ -155,10 +155,10 @@ int main() {
     input_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;  
     input_codec_context->gop_size = 12;
     input_codec_context->max_b_frames = 2;
-    input_codec_context->pkt_timebase = input_stream->time_base;
+    input_codec_context->pkt_timebase = input_video_stream->time_base;
 
-    output_codec_context->width = input_stream->codecpar->width;
-    output_codec_context->height = input_stream->codecpar->height;
+    output_codec_context->width = input_video_stream->codecpar->width;
+    output_codec_context->height = input_video_stream->codecpar->height;
     output_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
     output_codec_context->time_base = AVRational{1, 60};
     output_codec_context->framerate = AVRational{60, 1};
@@ -173,7 +173,7 @@ int main() {
         output_codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    ret = avcodec_parameters_to_context(input_codec_context, input_stream->codecpar);
+    ret = avcodec_parameters_to_context(input_codec_context, input_video_stream->codecpar);
     if (ret < 0) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
@@ -203,7 +203,7 @@ int main() {
         return -1;
     }
 
-    ret = avcodec_parameters_from_context(output_stream->codecpar, output_codec_context);
+    ret = avcodec_parameters_from_context(output_video_stream->codecpar, output_codec_context);
     if (ret < 0) {
         avformat_free_context(format_input_context);
         avcodec_free_context(&input_codec_context);
@@ -223,7 +223,7 @@ int main() {
         return -1;
     }
 
-    output_stream->time_base = output_codec_context->time_base;
+    output_video_stream->time_base = output_codec_context->time_base;
     ret = avformat_write_header(format_output_context, &options);
     if (ret < 0) {
         avformat_free_context(format_input_context);
@@ -293,7 +293,7 @@ int main() {
         }
 
         // make sure we are copying the correct video stream and not something like captions
-        if (input_packet->stream_index == input_stream_idx) {
+        if (input_packet->stream_index == input_video_stream_idx) {
             ret = avcodec_send_packet(input_codec_context, input_packet);
             av_packet_unref(input_packet);
             if (ret < 0) {
@@ -344,7 +344,7 @@ int main() {
                         if (first_pts == AV_NOPTS_VALUE) {
                             first_pts = input_frame->best_effort_timestamp;
                         }
-                        output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp - first_pts, input_stream->time_base, output_codec_context->time_base);
+                        output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp - first_pts, input_video_stream->time_base, output_codec_context->time_base);
                     }
 
                     ret = avcodec_send_frame(output_codec_context, output_frame);
@@ -369,8 +369,8 @@ int main() {
                     break;
                 }
 
-                output_packet->stream_index=output_stream->index;
-                av_packet_rescale_ts(output_packet, output_codec_context->time_base, output_stream->time_base);
+                output_packet->stream_index=output_video_stream->index;
+                av_packet_rescale_ts(output_packet, output_codec_context->time_base, output_video_stream->time_base);
 
                 ret = av_interleaved_write_frame(format_output_context, output_packet);
                 if (ret < 0) {
