@@ -68,6 +68,10 @@ int main() {
     }
     av_dump_format(format_input_context, 0, "4", 0);
 
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd))) {
+        std::cout << "writing video to directory; " << cwd << "\n";
+    }
 
     AVFormatContext* format_output_context = nullptr;    
     ret = avformat_alloc_output_context2(&format_output_context, NULL, NULL, "output.mp4");

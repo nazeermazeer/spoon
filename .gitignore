@@ -66,3 +66,4 @@ Testing/
 # build artifacts
 *.dSYM/
 build/
+output.mp4
