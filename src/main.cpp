@@ -144,11 +144,12 @@ int main() {
     input_codec_context->width = 1920;
     input_codec_context->height = 1080;
     input_codec_context->bit_rate = 4000000;
-    input_codec_context->time_base = AVRational{1, 30};
-    input_codec_context->framerate = AVRational{30, 1};
+    input_codec_context->time_base = AVRational{1, 60};
+    input_codec_context->framerate = AVRational{60, 1};
     input_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;  
     input_codec_context->gop_size = 12;
-    input_codec_context->max_b_frames = 2; 
+    input_codec_context->max_b_frames = 2;
+    input_codec_context->pkt_timebase = input_stream->time_base;
 
     output_codec_context->width = input_stream->codecpar->width;
     output_codec_context->height = input_stream->codecpar->height;
