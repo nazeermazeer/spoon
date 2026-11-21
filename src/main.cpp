@@ -288,7 +288,6 @@ int main() {
                 std::cerr << "frame sending failed; " << ffmpeg_error_string(ret) << "\n";
                 break;
             }
-            std::cout << "read packet with size: " << input_packet->size << "\n";
 
             while (true) {
                 ret = avcodec_receive_frame(input_codec_context, input_frame);
@@ -313,8 +312,6 @@ int main() {
                     break;
                 }
 
-                std::cout << "frame recieve successful\n";
-
                 static int64_t first_pts = AV_NOPTS_VALUE;
                 if (input_frame->best_effort_timestamp != AV_NOPTS_VALUE) {
                     if (first_pts == AV_NOPTS_VALUE) {
@@ -331,12 +328,9 @@ int main() {
                     break;
                 }
 
-                std::cout << "frame send successful\n";
-
                 ret = avcodec_receive_packet(output_codec_context, output_packet);
                 if (ret == AVERROR(EAGAIN)) {
                     av_packet_unref(input_packet);
-                    std::cout << "reading more frames\n";
                     break;
                 }
                 if (ret < 0) {
@@ -345,8 +339,6 @@ int main() {
                     std::cerr << "packet recieve failed; " << ffmpeg_error_string(ret) << "\n";
                     break;
                 }
-
-                std::cout << "packet recieve successful\n";
 
                 output_packet->stream_index=output_stream->index;
                 av_packet_rescale_ts(output_packet, output_codec_context->time_base, output_stream->time_base);
