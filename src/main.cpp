@@ -315,8 +315,12 @@ int main() {
 
                 std::cout << "frame recieve successful\n";
 
+                static int64_t first_pts = AV_NOPTS_VALUE;
                 if (input_frame->best_effort_timestamp != AV_NOPTS_VALUE) {
-                    output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp, input_stream->time_base, output_codec_context->time_base);
+                    if (first_pts == AV_NOPTS_VALUE) {
+                        first_pts = input_frame->best_effort_timestamp;
+                    }
+                    output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp - first_pts, input_stream->time_base, output_codec_context->time_base);
                 }
 
                 ret = avcodec_send_frame(output_codec_context, output_frame);
