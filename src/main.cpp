@@ -18,6 +18,7 @@ std::string ffmpeg_error_string(int errnum) {
 
 int main() {
     avdevice_register_all();
+    bool quit = false;
     int ret;
 
     const AVInputFormat* input_format = av_find_input_format("avfoundation");
@@ -270,9 +271,9 @@ int main() {
 
     while (true) {  
         // macOS Virtual Key Code 12 = Q
-        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12)) {
+        if (CGEventSourceKeyState(kCGEventSourceStateCombinedSessionState, 12) && !quit) {
             std::cout << "Quitting...\n";
-            break;
+            quit = true;
         }
 
         ret = av_read_frame(format_input_context, input_packet);
@@ -298,51 +299,64 @@ int main() {
                 break;
             }
 
+            if (quit) {
+                ret = avcodec_send_frame(output_codec_context, nullptr);
+                if (ret < 0) {
+                    av_frame_free(&input_frame);
+                    av_packet_unref(input_packet);
+                    std::cerr << "frame flush failed; " << ffmpeg_error_string(ret) << "\n";
+                    break;
+                }
+            }
+
             while (true) {
-                ret = avcodec_receive_frame(input_codec_context, input_frame);
-                if (ret == AVERROR(EAGAIN)) {
-                    break;
-                }
-                if (ret < 0) {
-                    av_frame_free(&input_frame);
-                    av_packet_unref(input_packet);
-                    std::cerr << "frame recieve failed; " << ffmpeg_error_string(ret) << "\n";
-                    break;
-                }
-
-                ret = sws_scale(
-                    sws_context, input_frame->data, input_frame->linesize, 0, 
-                    input_frame->height, output_frame->data, output_frame->linesize
-                );
-                if (ret < 0) {
-                    av_frame_free(&input_frame);
-                    av_packet_unref(input_packet);
-                    std::cerr << "frame conversion failed; " << ffmpeg_error_string(ret) << "\n";
-                    break;
-                }
-
-                static int64_t first_pts = AV_NOPTS_VALUE;
-                if (input_frame->best_effort_timestamp != AV_NOPTS_VALUE) {
-                    if (first_pts == AV_NOPTS_VALUE) {
-                        first_pts = input_frame->best_effort_timestamp;
+                if (!quit) {
+                    ret = avcodec_receive_frame(input_codec_context, input_frame);
+                    if (ret == AVERROR(EAGAIN)) {
+                        break;
                     }
-                    output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp - first_pts, input_stream->time_base, output_codec_context->time_base);
-                }
+                    if (ret < 0) {
+                        av_frame_free(&input_frame);
+                        av_packet_unref(input_packet);
+                        std::cerr << "frame recieve failed; " << ffmpeg_error_string(ret) << "\n";
+                        break;
+                    }
 
-                ret = avcodec_send_frame(output_codec_context, output_frame);
-                if (ret < 0) {
-                    av_frame_free(&input_frame);
-                    av_packet_unref(input_packet);
-                    std::cerr << "frame send failed; " << ffmpeg_error_string(ret) << "\n";
-                    break;
+                    ret = sws_scale(
+                        sws_context, input_frame->data, input_frame->linesize, 0, 
+                        input_frame->height, output_frame->data, output_frame->linesize
+                    );
+                    if (ret < 0) {
+                        av_frame_free(&input_frame);
+                        av_packet_unref(input_packet);
+                        std::cerr << "frame conversion failed; " << ffmpeg_error_string(ret) << "\n";
+                        break;
+                    }
+
+                    static int64_t first_pts = AV_NOPTS_VALUE;
+                    if (input_frame->best_effort_timestamp != AV_NOPTS_VALUE) {
+                        if (first_pts == AV_NOPTS_VALUE) {
+                            first_pts = input_frame->best_effort_timestamp;
+                        }
+                        output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp - first_pts, input_stream->time_base, output_codec_context->time_base);
+                    }
+
+                    ret = avcodec_send_frame(output_codec_context, output_frame);
+                    if (ret < 0) {
+                        av_frame_free(&input_frame);
+                        av_packet_unref(input_packet);
+                        std::cerr << "frame send failed; " << ffmpeg_error_string(ret) << "\n";
+                        break;
+                    }
                 }
 
                 ret = avcodec_receive_packet(output_codec_context, output_packet);
                 if (ret == AVERROR(EAGAIN)) {
                     av_packet_unref(input_packet);
                     break;
-                }
-                if (ret < 0) {
+                } else if (ret == AVERROR_EOF) {
+                    break;
+                } else if (ret < 0) {
                     av_frame_free(&input_frame);
                     av_packet_unref(input_packet);
                     std::cerr << "packet recieve failed; " << ffmpeg_error_string(ret) << "\n";
@@ -365,6 +379,11 @@ int main() {
         }
 
         av_packet_unref(input_packet);
+    }
+
+    ret = av_interleaved_write_frame(format_output_context, nullptr);
+    if (ret < 0) {
+        std::cerr << "flush write frame failed; " << ffmpeg_error_string(ret) << "\n";
     }
 
     ret = av_write_trailer(format_output_context);
