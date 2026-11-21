@@ -213,6 +213,7 @@ int main() {
         return -1;
     }
 
+    output_stream->time_base = output_codec_context->time_base;
     ret = avformat_write_header(format_output_context, &options);
     if (ret < 0) {
         avformat_free_context(format_input_context);
@@ -314,6 +315,10 @@ int main() {
 
                 std::cout << "frame recieve successful\n";
 
+                if (input_frame->best_effort_timestamp != AV_NOPTS_VALUE) {
+                    output_frame->pts = av_rescale_q(input_frame->best_effort_timestamp, input_stream->time_base, output_codec_context->time_base);
+                }
+
                 ret = avcodec_send_frame(output_codec_context, output_frame);
                 if (ret < 0) {
                     av_frame_free(&input_frame);
@@ -338,6 +343,9 @@ int main() {
                 }
 
                 std::cout << "packet recieve successful\n";
+
+                output_packet->stream_index=output_stream->index;
+                av_packet_rescale_ts(output_packet, output_codec_context->time_base, output_stream->time_base);
 
                 ret = av_interleaved_write_frame(format_output_context, output_packet);
                 if (ret < 0) {
