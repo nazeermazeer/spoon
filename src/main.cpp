@@ -7,6 +7,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/rational.h>
 #include <libswscale/swscale.h>
+#include <libavutil/opt.h>
 }
 
 std::string ffmpeg_error_string(int errnum) {
@@ -114,7 +115,7 @@ int main() {
         return -1;
     }
 
-    const AVCodec* output_codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    const AVCodec* output_codec = avcodec_find_encoder_by_name("libx264");
     if (!output_codec) {
         avformat_free_context(format_input_context);
         avformat_free_context(format_output_context);
@@ -158,6 +159,9 @@ int main() {
     output_codec_context->framerate = AVRational{60, 1};
     output_codec_context->bit_rate = 4'000'000;
     output_codec_context->gop_size = 12;
+
+    ret = av_opt_set(output_codec_context->priv_data, "preset", "medium", 0);
+    ret = av_opt_set(output_codec_context->priv_data, "crf", "18", 0);
 
     // produce global headers if required
     if (format_output_context->oformat->flags & AVFMT_GLOBALHEADER) {

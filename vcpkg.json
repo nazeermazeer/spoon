@@ -1,5 +1,8 @@
 {
   "dependencies": [
-    "ffmpeg"
+    {
+      "name": "ffmpeg",
+      "features": ["x264"]
+    }
   ]
 }
