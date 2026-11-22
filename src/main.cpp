@@ -93,30 +93,12 @@ int main() {
         return -1;
     }
 
-    int in_audio_stream_idx = av_find_best_stream(format_in_context, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
-    if (in_audio_stream_idx < 0) {
-        avformat_free_context(format_in_context);
-        avformat_free_context(format_out_context);
-
-        std::cerr << "screen capture audio stream could not be found; " << ffmpeg_error_string(in_video_stream_idx) << "\n";
-        return -1;
-    }
-
     AVStream* in_video_stream = format_in_context->streams[in_video_stream_idx];
     if (!in_video_stream) {
         avformat_free_context(format_in_context);
         avformat_free_context(format_out_context);
 
         std::cerr << "in screen capture video stream could not be opened\n";
-        return -1;
-    }
-
-    AVStream* in_audio_stream = format_in_context->streams[in_audio_stream_idx];
-    if (!in_audio_stream) {
-        avformat_free_context(format_in_context);
-        avformat_free_context(format_out_context);
-
-        std::cerr << "in screen capture audio stream could not be opened\n";
         return -1;
     }
 
