@@ -74,20 +74,20 @@ int main() {
         std::cout << "writing video to directory; " << cwd << "\n";
     }
 
-    AVFormatContext* format_output_context = nullptr;    
-    ret = avformat_alloc_output_context2(&format_output_context, NULL, NULL, "output.mp4");
+    AVFormatContext* format_out_context = nullptr;    
+    ret = avformat_alloc_output_context2(&format_out_context, NULL, NULL, "out.mp4");
     if (ret < 0) {
         av_dict_free(&options);
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
-        std::cerr << "opening output device failed; " << ffmpeg_error_string(ret) << "\n";
+        avformat_free_context(format_out_context);
+        std::cerr << "opening out device failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
     int in_video_stream_idx = av_find_best_stream(format_in_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
     if (in_video_stream_idx < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
 
         std::cerr << "screen capture video stream could not be found; " << ffmpeg_error_string(in_video_stream_idx) << "\n";
         return -1;
@@ -96,7 +96,7 @@ int main() {
     int in_audio_stream_idx = av_find_best_stream(format_in_context, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
     if (in_audio_stream_idx < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
 
         std::cerr << "screen capture audio stream could not be found; " << ffmpeg_error_string(in_video_stream_idx) << "\n";
         return -1;
@@ -105,7 +105,7 @@ int main() {
     AVStream* in_video_stream = format_in_context->streams[in_video_stream_idx];
     if (!in_video_stream) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
 
         std::cerr << "in screen capture video stream could not be opened\n";
         return -1;
@@ -114,18 +114,18 @@ int main() {
     AVStream* in_audio_stream = format_in_context->streams[in_audio_stream_idx];
     if (!in_audio_stream) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
 
         std::cerr << "in screen capture audio stream could not be opened\n";
         return -1;
     }
 
-    AVStream* output_video_stream = avformat_new_stream(format_output_context, nullptr);
-    if (!output_video_stream) {
+    AVStream* out_video_stream = avformat_new_stream(format_out_context, nullptr);
+    if (!out_video_stream) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
 
-        std::cerr << "output screen capture stream could not be opened\n";
+        std::cerr << "out screen capture stream could not be opened\n";
         return -1;
     }
 
@@ -133,16 +133,16 @@ int main() {
     const AVCodec* in_codec = avcodec_find_decoder(in_video_stream->codecpar->codec_id);
     if (!in_codec) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         std::cerr << "could not find in decoder\n";
         return -1;
     }
 
-    const AVCodec* output_codec = avcodec_find_encoder_by_name("libx264");
-    if (!output_codec) {
+    const AVCodec* out_codec = avcodec_find_encoder_by_name("libx264");
+    if (!out_codec) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
-        std::cerr << "could not find output decoder\n";
+        avformat_free_context(format_out_context);
+        std::cerr << "could not find out decoder\n";
         return -1;
     }
 
@@ -150,18 +150,18 @@ int main() {
     if (!in_codec_context) {
         avformat_free_context(format_in_context);
         avcodec_free_context(&in_codec_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         std::cerr << "in codec retrival failed\n";
         return -1;
     }
 
-    AVCodecContext* output_codec_context = avcodec_alloc_context3(output_codec);
-    if (!output_codec_context) {
+    AVCodecContext* out_codec_context = avcodec_alloc_context3(out_codec);
+    if (!out_codec_context) {
         avformat_free_context(format_in_context);
         avcodec_free_context(&in_codec_context);
-        avformat_free_context(format_output_context);
-        avcodec_free_context(&output_codec_context);
-        std::cerr << "output codec retrival failed\n";
+        avformat_free_context(format_out_context);
+        avcodec_free_context(&out_codec_context);
+        std::cerr << "out codec retrival failed\n";
         return -1;
     }
 
@@ -175,45 +175,45 @@ int main() {
     in_codec_context->max_b_frames = 2;
     in_codec_context->pkt_timebase = in_video_stream->time_base;
 
-    output_codec_context->width = in_video_stream->codecpar->width;
-    output_codec_context->height = in_video_stream->codecpar->height;
-    output_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
-    output_codec_context->time_base = AVRational{1, 60};
-    output_codec_context->framerate = AVRational{60, 1};
-    output_codec_context->bit_rate = 4'000'000;
-    output_codec_context->gop_size = 12;
+    out_codec_context->width = in_video_stream->codecpar->width;
+    out_codec_context->height = in_video_stream->codecpar->height;
+    out_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
+    out_codec_context->time_base = AVRational{1, 60};
+    out_codec_context->framerate = AVRational{60, 1};
+    out_codec_context->bit_rate = 4'000'000;
+    out_codec_context->gop_size = 12;
 
-    ret = av_opt_set(output_codec_context->priv_data, "preset", "medium", 0);
+    ret = av_opt_set(out_codec_context->priv_data, "preset", "medium", 0);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
+        avcodec_free_context(&out_codec_context);
         std::cerr << "medium preset configuration failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
-    ret = av_opt_set(output_codec_context->priv_data, "crf", "18", 0);
+    ret = av_opt_set(out_codec_context->priv_data, "crf", "18", 0);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
+        avcodec_free_context(&out_codec_context);
         std::cerr << "crf configuration failed; " << ffmpeg_error_string(ret) << "\n";
         return 1;
     }
 
     // produce global headers if required
-    if (format_output_context->oformat->flags & AVFMT_GLOBALHEADER) {
-        output_codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    if (format_out_context->oformat->flags & AVFMT_GLOBALHEADER) {
+        out_codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
     ret = avcodec_parameters_to_context(in_codec_context, in_video_stream->codecpar);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
+        avcodec_free_context(&out_codec_context);
         std::cerr << "in parameters failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
@@ -221,50 +221,50 @@ int main() {
     ret = avcodec_open2(in_codec_context, in_codec, &options);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
+        avcodec_free_context(&out_codec_context);
         std::cerr << "in context opening failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
-    ret = avcodec_open2(output_codec_context, output_codec, &options);
+    ret = avcodec_open2(out_codec_context, out_codec, &options);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
-        std::cerr << "output context opening failed; " << ffmpeg_error_string(ret) << "\n";
+        avcodec_free_context(&out_codec_context);
+        std::cerr << "out context opening failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
-    ret = avcodec_parameters_from_context(output_video_stream->codecpar, output_codec_context);
+    ret = avcodec_parameters_from_context(out_video_stream->codecpar, out_codec_context);
     if (ret < 0) {
         avformat_free_context(format_in_context);
         avcodec_free_context(&in_codec_context);
-        avformat_free_context(format_output_context);
-        avcodec_free_context(&output_codec_context);
-        std::cerr << "could not set output codec parameters" << ffmpeg_error_string(ret) << "\n";
+        avformat_free_context(format_out_context);
+        avcodec_free_context(&out_codec_context);
+        std::cerr << "could not set out codec parameters" << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
-    ret = avio_open(&format_output_context->pb, "output.mp4", AVIO_FLAG_WRITE);
+    ret = avio_open(&format_out_context->pb, "out.mp4", AVIO_FLAG_WRITE);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
-        std::cerr << "output file open failed; " << ffmpeg_error_string(ret) << "\n";
+        avcodec_free_context(&out_codec_context);
+        std::cerr << "out file open failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
 
-    output_video_stream->time_base = output_codec_context->time_base;
-    ret = avformat_write_header(format_output_context, &options);
+    out_video_stream->time_base = out_codec_context->time_base;
+    ret = avformat_write_header(format_out_context, &options);
     if (ret < 0) {
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         avcodec_free_context(&in_codec_context);
-        avcodec_free_context(&output_codec_context);
+        avcodec_free_context(&out_codec_context);
         std::cerr << "header write failed; " << ffmpeg_error_string(ret) << "\n";
         return -1;
     }
@@ -276,31 +276,31 @@ int main() {
     if (!in_packet) {
         av_packet_free(&in_packet);
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         std::cerr << "packet allocation failed\n";
         return -1;
     }
 
-    AVPacket* output_packet = av_packet_alloc();
-    if (!output_packet) {
+    AVPacket* out_packet = av_packet_alloc();
+    if (!out_packet) {
         av_packet_free(&in_packet);
-        av_packet_free(&output_packet);
+        av_packet_free(&out_packet);
         avformat_free_context(format_in_context);
-        avformat_free_context(format_output_context);
+        avformat_free_context(format_out_context);
         std::cerr << "packet allocation failed\n";
         return -1;
     }
 
     AVFrame* in_frame = av_frame_alloc();
-    AVFrame* output_frame = av_frame_alloc();
-    output_frame->format = output_codec_context->pix_fmt;
-    output_frame->width = output_codec_context->width;
-    output_frame->height = output_codec_context->height;
-    av_frame_get_buffer(output_frame, 32);
+    AVFrame* out_frame = av_frame_alloc();
+    out_frame->format = out_codec_context->pix_fmt;
+    out_frame->width = out_codec_context->width;
+    out_frame->height = out_codec_context->height;
+    av_frame_get_buffer(out_frame, 32);
 
     SwsContext* sws_context = sws_getContext(
         in_codec_context->width, in_codec_context->height, in_codec_context->pix_fmt,
-        output_codec_context->width, output_codec_context->height, output_codec_context->pix_fmt,
+        out_codec_context->width, out_codec_context->height, out_codec_context->pix_fmt,
         SWS_BILINEAR, nullptr, nullptr, nullptr
     );
 
@@ -337,7 +337,7 @@ int main() {
             }
 
             if (quit) {
-                ret = avcodec_send_frame(output_codec_context, nullptr);
+                ret = avcodec_send_frame(out_codec_context, nullptr);
                 if (ret == AVERROR_EOF) {
                     av_frame_free(&in_frame);
                     av_packet_unref(in_packet);
@@ -365,7 +365,7 @@ int main() {
 
                     ret = sws_scale(
                         sws_context, in_frame->data, in_frame->linesize, 0, 
-                        in_frame->height, output_frame->data, output_frame->linesize
+                        in_frame->height, out_frame->data, out_frame->linesize
                     );
                     if (ret < 0) {
                         av_frame_free(&in_frame);
@@ -379,10 +379,10 @@ int main() {
                         if (first_pts == AV_NOPTS_VALUE) {
                             first_pts = in_frame->best_effort_timestamp;
                         }
-                        output_frame->pts = av_rescale_q(in_frame->best_effort_timestamp - first_pts, in_video_stream->time_base, output_codec_context->time_base);
+                        out_frame->pts = av_rescale_q(in_frame->best_effort_timestamp - first_pts, in_video_stream->time_base, out_codec_context->time_base);
                     }
 
-                    ret = avcodec_send_frame(output_codec_context, output_frame);
+                    ret = avcodec_send_frame(out_codec_context, out_frame);
                     if (ret < 0) {
                         av_frame_free(&in_frame);
                         av_packet_unref(in_packet);
@@ -391,7 +391,7 @@ int main() {
                     }
                 }
 
-                ret = avcodec_receive_packet(output_codec_context, output_packet);
+                ret = avcodec_receive_packet(out_codec_context, out_packet);
                 if (ret == AVERROR(EAGAIN)) {
                     av_packet_unref(in_packet);
                     break;
@@ -404,10 +404,10 @@ int main() {
                     break;
                 }
 
-                output_packet->stream_index=output_video_stream->index;
-                av_packet_rescale_ts(output_packet, output_codec_context->time_base, output_video_stream->time_base);
+                out_packet->stream_index=out_video_stream->index;
+                av_packet_rescale_ts(out_packet, out_codec_context->time_base, out_video_stream->time_base);
 
-                ret = av_interleaved_write_frame(format_output_context, output_packet);
+                ret = av_interleaved_write_frame(format_out_context, out_packet);
                 if (ret < 0) {
                     av_frame_free(&in_frame);
                     av_packet_unref(in_packet);
@@ -422,23 +422,23 @@ int main() {
         av_packet_unref(in_packet);
     }
 
-    ret = av_interleaved_write_frame(format_output_context, nullptr);
+    ret = av_interleaved_write_frame(format_out_context, nullptr);
     if (ret < 0) {
         std::cerr << "flush write frame failed; " << ffmpeg_error_string(ret) << "\n";
     }
 
-    ret = av_write_trailer(format_output_context);
+    ret = av_write_trailer(format_out_context);
     if (ret < 0) {
         std::cerr << "trailer write failed; " << ffmpeg_error_string(ret) << "\n";
     }
 
     avformat_close_input(&format_in_context);
     avformat_free_context(format_in_context);
-    avformat_free_context(format_output_context);
+    avformat_free_context(format_out_context);
     avcodec_free_context(&in_codec_context);
-    avcodec_free_context(&output_codec_context);
+    avcodec_free_context(&out_codec_context);
     av_packet_free(&in_packet);
-    av_packet_free(&output_packet);
+    av_packet_free(&out_packet);
     av_frame_free(&in_frame);
 
     return 0;
