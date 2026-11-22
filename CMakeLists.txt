@@ -10,7 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # 1. Locate the FFmpeg package via the vcpkg toolchain
 find_package(FFMPEG REQUIRED)
 
-add_executable(main src/main.cpp)
+add_executable(main src/main.cpp
+    src/capture.mm)
 
 # FFmpeg's headers require this macro when included from C++.
 target_compile_definitions(main PRIVATE __STDC_CONSTANT_MACROS)
